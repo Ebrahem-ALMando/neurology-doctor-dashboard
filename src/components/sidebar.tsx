@@ -1,0 +1,223 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { BarChart3, Calendar, FileText, Home, MessageSquare, Settings, Users, LogOut, HeartPulse } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { logout, type User } from "@/api/services/auth.service"
+import { useToast } from "@/components/ui/use-toast" // Add this import
+
+interface SidebarProps {
+  className?: string
+  onItemClick?: () => void
+}
+
+export function Sidebar({ className, onItemClick }: SidebarProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const { toast } = useToast() // Initialize useToast
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user")
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
+    }
+  }, [])
+
+  const handleItemClick = () => {
+    if (onItemClick) {
+      onItemClick()
+    }
+  }
+
+  const handleLogout = async () => {
+    const result = await logout({
+      onSuccess: (message) => {
+        toast({
+          title: "نجاح",
+          description: message,
+          variant: "default",
+        })
+      },
+      onError: (message) => {
+        toast({
+          title: "خطأ",
+          description: message,
+          variant: "destructive",
+        })
+      },
+    })
+    if (!result.error) {
+      router.push("/auth/signin")
+    } else {
+      console.error("Logout failed:", result.message)
+      // Optionally show a toast notification for logout failure
+    }
+    handleItemClick() // Close sidebar on mobile after logout attempt
+  }
+
+  const userDisplayName = user?.name || "د. جيمس ويلسون"
+  const userRole = user?.specialization || user?.role || "أخصائي أمراض القلب"
+  const userAvatarFallback = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "JW"
+  const userAvatarImage = user?.avatar || "/placeholder.svg?height=64&width=64"
+
+  return (
+    <div className={cn("pb-12 border-l relative", className)}>
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none z-0"></div>
+      <div className="space-y-4 py-4 relative z-10">
+        <div className="px-4 py-2">
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <div className="relative z-10">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-500 to-violet-300 blur-md opacity-30"></div>
+              <Avatar className="h-16 w-16 border-2 border-white dark:border-gray-800 shadow-md relative z-20">
+                <AvatarImage src={userAvatarImage || "/placeholder.svg"} alt={userDisplayName} />
+                <AvatarFallback className="bg-violet-100 text-violet-700">{userAvatarFallback}</AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="text-center relative z-20">
+              <h2 className="text-lg font-semibold">{userDisplayName}</h2>
+              <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                <HeartPulse className="h-3 w-3 text-violet-500" />
+                <span>{userRole}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-3 relative z-20">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">القائمة</h2>
+          <div className="space-y-1">
+            <Button
+              variant={pathname === "/dashboard" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/dashboard" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/dashboard" onClick={handleItemClick}>
+                <Home className="ml-2 h-5 w-5" />
+                لوحة التحكم
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/appointments" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/appointments" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/appointments" onClick={handleItemClick}>
+                <Calendar className="ml-2 h-5 w-5" />
+                المواعيد
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/medical-records" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/medical-records" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/medical-records" onClick={handleItemClick}>
+                <FileText className="ml-2 h-5 w-5" />
+                السجلات الطبية
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/articles" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/articles" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/articles" onClick={handleItemClick}>
+                <BarChart3 className="ml-2 h-5 w-5" />
+                المقالات
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/questions" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/questions" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/questions" onClick={handleItemClick}>
+                <MessageSquare className="ml-2 h-5 w-5" />
+                الأسئلة
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/patients" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/patients" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/patients" onClick={handleItemClick}>
+                <Users className="ml-2 h-5 w-5" />
+                المرضى
+              </Link>
+            </Button>
+            <Button
+              variant={pathname === "/settings" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/settings" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/settings" onClick={handleItemClick}>
+                <Settings className="ml-2 h-5 w-5" />
+                الإعدادات
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="px-3 absolute bottom-4 w-full relative z-20">
+        <Button
+          variant="ghost"
+          size="lg"
+          className="w-full justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+          onClick={handleLogout} // Call handleLogout
+        >
+          <LogOut className="ml-2 h-5 w-5" />
+          تسجيل الخروج
+        </Button>
+      </div>
+    </div>
+  )
+}
