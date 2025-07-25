@@ -1,22 +1,23 @@
 "use client"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { LayoutGrid, List, Search, FileText } from "lucide-react"
+import { LayoutGrid, List, Search, FileText, RotateCcw } from "lucide-react"
 import { ArticlesFilterDropdown } from "./articles-filter-dropdown"
 import { ArticlesCustomizer } from "./articles-customizer"
 import type { ArticlesSectionVisibility } from "./articles-customizer"
 import type { Article } from "@/data/articles"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { useState, useEffect } from "react"
 
 interface ArticlesHeaderProps {
   viewMode: "grid" | "table"
   onToggleView: (mode: "grid" | "table") => void
-  onFilterChange: (filters: { category?: string; status?: string }) => void
-  currentFilters: { category?: string; status?: string }
+  onFilterChange: (filters: { category_id?: number; is_published?: boolean; search?: string }) => void
+  currentFilters: { category_id?: number; is_published?: boolean; search?: string }
   visibility: ArticlesSectionVisibility
   onVisibilityChange: (visibility: ArticlesSectionVisibility) => void
-  onAddNewArticle: () => void // جديد
+  onAddNewArticle: () => void
 }
 
 export function ArticlesHeader({
@@ -28,6 +29,22 @@ export function ArticlesHeader({
   onVisibilityChange,
   onAddNewArticle
 }: ArticlesHeaderProps) {
+  const [searchTerm, setSearchTerm] = useState(currentFilters.search || "")
+  
+  // تأخير البحث لتحسين الأداء
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFilterChange({ ...currentFilters, search: searchTerm || undefined })
+    }, 500) // تأخير 500 مللي ثانية
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, onFilterChange])
+
+  const handleResetAllFilters = () => {
+    setSearchTerm("")
+    onFilterChange({}) // إعادة تعيين جميع الفلاتر
+  }
+
   const today = new Date()
   const arabicDate = new Intl.DateTimeFormat("ar-SA", {
     weekday: "long",
@@ -54,9 +71,21 @@ export function ArticlesHeader({
             <Input
               type="search"
               placeholder="بحث عن مقال..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-8 w-full rounded-full bg-muted/50 focus-visible:ring-violet-500 text-sm"
             />
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetAllFilters}
+                className="absolute left-8 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            )}
           </div>
 
           <Button

@@ -160,6 +160,21 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
               </Link>
             </Button>
             <Button
+              variant={pathname === "/article-comments" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/article-comments" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/article-comments" onClick={handleItemClick}>
+                <MessageSquare className="ml-2 h-5 w-5" />
+                تعليقات المقالات
+              </Link>
+            </Button>
+            <Button
               variant={pathname === "/questions" ? "secondary" : "ghost"}
               size="lg"
               className={cn(
@@ -189,6 +204,7 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
                 المرضى
               </Link>
             </Button>
+        
             <Button
               variant={pathname === "/settings" ? "secondary" : "ghost"}
               size="lg"

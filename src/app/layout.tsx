@@ -22,10 +22,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="overflow-x-hidden">
-      <body className={`${cairo.className} overflow-x-hidden`}>
+    // <html lang="ar" dir="rtl" className="overflow-x-hidden">
+    //   <body className={`${cairo.className} overflow-x-hidden`}>
+    <html lang="ar" dir="rtl">
+      <body className={`${cairo.className}`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="overflow-x-hidden min-h-screen w-full">{children}</div>
+          <div className="min-h-screen w-full">{children}</div>
           <Toaster />
         </ThemeProvider>
       </body>

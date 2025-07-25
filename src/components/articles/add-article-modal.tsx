@@ -16,8 +16,11 @@ import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
 import {Textarea} from "@/components/ui/textarea"
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
-import {Plus, FileText, Calendar, User, ImageIcon, Tag, AlignJustify, UploadCloud, X} from "lucide-react"
-import {articleCategories, articleStatuses, type Article} from "@/data/articles"
+import {Plus, FileText, Calendar, User, ImageIcon, Tag, AlignJustify, UploadCloud, X, Trash2} from "lucide-react"
+import {articleStatuses, type Article} from "@/data/articles"
+import { useAllArticleCategories } from "@/hooks/useArticleCategories"
+import { useAllDoctors } from "@/hooks/useUsers"
+import { CategoryManagementModal } from "./category-management-modal"
 import dynamic from "next/dynamic"
 import "react-quill/dist/quill.snow.css"
 import {cn} from "@/lib/utils"
@@ -42,10 +45,18 @@ interface ArticleFormData {
   published_at: string;
 }
 
+// نوع البيانات المرسلة لـ onSave مع الصور
+interface ArticleFormDataWithImages extends ArticleFormData {
+  uploadedImages: UploadedImageData[];
+  newImages?: any[];
+  deletedImages?: any[];
+  changedCoverImages?: any[];
+}
+
 interface AddArticleModalProps {
     trigger?: React.ReactNode
     article?: Article | null
-    onSave: (articleData: AddArticleFormData) => void
+    onSave: (articleData: ArticleFormDataWithImages) => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
     mode?: 'add' | 'edit' | 'view'
@@ -68,11 +79,18 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
     const [internalOpen, setInternalOpen] = useState(false)
     const open = controlledOpen !== undefined ? controlledOpen : internalOpen
     const setOpen = onOpenChange || setInternalOpen
+    
+        // جلب التصنيفات والأطباء
+    const { categories, isLoading: categoriesLoading, mutate: mutateCategories } = useAllArticleCategories()
+    const { doctors, isLoading: doctorsLoading, mutate: mutateDoctors } = useAllDoctors()
+    
+    // حالة موديل إدارة التصنيفات
+    const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 
     const [content, setContent] = useState<string>(article ? (article as any).content ?? "" : "")
     console.log(article)
     // نوع uploadedImages:
-    const [uploadedImages, setUploadedImages] = useState<{ file?: File; preview: string; is_cover: boolean; image_name?: string; image_url?: string }[]>([])
+    const [uploadedImages, setUploadedImages] = useState<{ file?: File; preview: string; is_cover: boolean; image_name?: string; image_url?: string; id?: number }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState<ArticleFormData>({
@@ -225,6 +243,12 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
     }
 
     // handleSubmit: أرسل فقط بيانات الصور المرفوعة
+    // اختيار تصنيف من الموديل
+    const handleCategorySelect = (categoryId: number) => {
+        handleInputChange("category_id", categoryId);
+        setCategoryModalOpen(false);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -249,7 +273,7 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
               newImages,
               deletedImages,
               changedCoverImages,
-            });
+            } as ArticleFormDataWithImages);
             setOpen(false);
             if (!isEditing) {
               setFormData({
@@ -265,7 +289,7 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
               setContent("");
               oldImagesRef.current = [];
             }
-            // أظهر توست نجاح هنا (يمكنك استخدام useToast أو تمرير prop)
+
         } finally {
             setIsSubmitting(false);
         }
@@ -312,20 +336,44 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
                                 <Tag className="h-4 w-4 text-violet-600"/>
                                 التصنيف
                             </Label>
-                            <Select value={formData.category_id ? String(formData.category_id) : ""}
-                                    onValueChange={(value) => handleInputChange("category_id", Number(value))}
-                                    disabled={isViewing}>
-                                <SelectTrigger className="focus:ring-violet-500">
-                                    <SelectValue placeholder="اختر التصنيف"/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {articleCategories.map((category) => (
-                                        <SelectItem key={category} value={category}>
-                                            {category}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <Select 
+                                        value={formData.category_id ? String(formData.category_id) : ""}
+                                        onValueChange={(value) => handleInputChange("category_id", Number(value))}
+                                        disabled={isViewing || categoriesLoading}
+                                    >
+                                        <SelectTrigger className="focus:ring-violet-500 flex-1">
+                                            <SelectValue placeholder={categoriesLoading ? "جاري التحميل..." : "اختر التصنيف"}/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(categories as any[]).map((category: any) => (
+                                                <SelectItem key={category.id} value={String(category.id)}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    
+                                    {!isViewing && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCategoryModalOpen(true)}
+                                            className="border-dashed border-gray-300 hover:border-violet-500 hover:bg-violet-50"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                                
+                                {formData.category_id && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                                        التصنيف المحدد: {(categories as any[]).find((c: any) => c.id === formData.category_id)?.name}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Short Description */}
@@ -355,18 +403,24 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
                             <Select
                                 value={formData.doctor_id ? String(formData.doctor_id) : ""}
                                 onValueChange={(value) => handleInputChange("doctor_id", Number(value))}
-                                disabled={isViewing}>
+                                disabled={isViewing || doctorsLoading}>
                                 <SelectTrigger className="focus:ring-violet-500">
-                                    <SelectValue placeholder="اختر المؤلف (الطبيب)"/>
+                                    <SelectValue placeholder={doctorsLoading ? "جاري التحميل..." : "اختر المؤلف (الطبيب)"}/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {["د. جيمس ويلسون", "د. سارة أحمد", "د. محمد علي", "د. فاطمة الزهراء"].map((doctor) => (
-                                        <SelectItem key={doctor} value={doctor}>
-                                            {doctor}
+                                    {doctors.map((doctor) => (
+                                        <SelectItem key={doctor.id} value={String(doctor.id)}>
+                                            {doctor.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            
+                            {formData.doctor_id && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                    الطبيب المحدد: {doctors.find((d) => d.id === formData.doctor_id)?.name}
+                                </div>
+                            )}
                         </div>
 
                         {/* Content (Rich Text Editor) */}
@@ -523,6 +577,14 @@ export function AddArticleModal({trigger, article, onSave, open: controlledOpen,
                     </DialogFooter>
                 </form>
             </DialogContent>
+            
+            {/* موديل إدارة التصنيفات */}
+            <CategoryManagementModal
+                open={categoryModalOpen}
+                onOpenChange={setCategoryModalOpen}
+                onCategorySelect={handleCategorySelect}
+                selectedCategoryId={formData.category_id as number}
+            />
         </Dialog>
     )
 }

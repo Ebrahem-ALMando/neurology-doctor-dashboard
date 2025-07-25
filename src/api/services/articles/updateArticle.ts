@@ -8,6 +8,7 @@ export interface UpdateArticleData {
   short_description?: string;
   content?: string;
   is_published?: boolean;
+  published_at?: string;
 }
 
 export const updateArticle = async (articleId: number, data: UpdateArticleData): Promise<APIResponse<any>> => {

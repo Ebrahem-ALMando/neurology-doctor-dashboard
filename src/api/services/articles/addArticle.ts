@@ -9,6 +9,7 @@ export interface AddArticleData {
   short_description: string;
   content: string;
   is_published: boolean;
+  published_at: string;
 }
 
 // دالة إضافة مقال جديد

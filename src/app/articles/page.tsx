@@ -22,7 +22,7 @@ import { addArticleImage } from "@/api/services/articlesimage/addArticleImage";
 import { deleteArticle } from "@/api/services/articles/deleteArticle";
 import { updateArticle } from "@/api/services/articles/updateArticle";
 import { AddArticleModal } from "@/components/articles/add-article-modal";
-
+import { Button } from "@/components/ui/button"
 export default function ArticlesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
   // const [articles, setArticles] = useState<Article[]>([])
@@ -30,9 +30,9 @@ export default function ArticlesPage() {
   // const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 6 // 6 for grid, 7 for table (adjust as needed)
-  const [filters, setFilters] = useState<{ category?: string; status?: string }>({})
+  const [filters, setFilters] = useState<{ category_id?: number; is_published?: boolean; search?: string }>({})
   const [sort, setSort] = useState<{ sortBy: keyof Article; sortOrder: "asc" | "desc" }>({
-    sortBy: "publishedDate",
+    sortBy: "published_at",
     sortOrder: "desc",
   })
   const [visibility, setVisibility] = useState<ArticlesSectionVisibility>({
@@ -40,7 +40,17 @@ export default function ArticlesPage() {
     articlesList: true,
   })
   const { toast } = useToast()
-  const {articles,articleStats:stats,isLoading,error,mutate}=useArticles()
+
+  // تحويل الفلاتر إلى معاملات API
+  const apiParams = {
+    search: filters.search,
+    category_id: filters.category_id,
+    is_published: filters.is_published,
+    page: currentPage,
+    per_page: itemsPerPage
+  }
+
+  const {articles,articleStats:stats,isLoading,error,mutate}=useArticles(apiParams)
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
@@ -48,17 +58,9 @@ export default function ArticlesPage() {
 
 
 
-  const filteredAndSortedArticles = useMemo(() => {
-    let filtered = articles.filter((article) => {
-      const matchCategory = filters.category ? article.category.name === filters.category : true
-      const matchStatus = filters.status
-        ? (filters.status === "published" ? article.is_published : !article.is_published)
-        : true;
-      return matchCategory && matchStatus
-    })
-
-
-    filtered.sort((a, b) => {
+  // ترتيب المقالات محلياً (لأن API قد لا يدعم الترتيب)
+  const sortedArticles = useMemo(() => {
+    const sorted = [...articles].sort((a, b) => {
       const aValue = a[sort.sortBy]
       const bValue = b[sort.sortBy]
       if (typeof aValue === "string" && typeof bValue === "string") {
@@ -69,19 +71,21 @@ export default function ArticlesPage() {
       }
       return 0
     })
+    return sorted
+  }, [articles, sort])
 
-    return filtered
-  }, [articles, filters, sort])
-
-  const totalPages = Math.ceil(filteredAndSortedArticles.length / itemsPerPage)
-  const currentArticles = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredAndSortedArticles.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredAndSortedArticles, currentPage])
+  // حساب الصفحات (إذا كان API يدعم pagination)
+  const totalPages = Math.ceil(((stats as any)?.total || articles.length) / itemsPerPage)
+  const currentArticles = sortedArticles // البيانات تأتي من API مع الفلترة
 
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+  }
+
+  const handleFilterChange = (newFilters: { category_id?: number; is_published?: boolean; search?: string }) => {
+    setFilters(newFilters)
+    setCurrentPage(1) // إعادة تعيين الصفحة عند تغيير الفلاتر
   }
 
   const handleAddArticle = async (articleData: any) => {
@@ -90,13 +94,14 @@ export default function ArticlesPage() {
         title: articleData.title,
         short_description: articleData.short_description,
         content: articleData.content,
-        category_id: 1,
-        doctor_id: 1,
+        category_id: Number(articleData.category_id),
+        doctor_id: Number(articleData.doctor_id),
         is_published: articleData.is_published,
         published_at: articleData.published_at,
       };
       const res = await addArticle(articlePayload);
       if (res.error || !res.data?.id) {
+        
         toast({ title: "خطأ", description: res.message || "فشل إضافة المقال!", variant: "destructive" });
         return;
       }
@@ -114,7 +119,7 @@ export default function ArticlesPage() {
           })
         );
       }
-      mutate && mutate();
+mutate && mutate();
       toast({ title: "نجاح", description: "تم إضافة المقال بنجاح!", variant: "default" });
     } catch (err: any) {
       toast({ title: "خطأ", description: err?.message || "حدث خطأ أثناء إضافة المقال!", variant: "destructive" });
@@ -129,7 +134,7 @@ export default function ArticlesPage() {
   };
   const handleEditArticle = (article: Article) => {
     setEditingArticle(article);
-    
+
     setModalMode('edit');
     setModalOpen(true);
     mutate && mutate();
@@ -150,10 +155,8 @@ export default function ArticlesPage() {
           title: articleData.title,
           short_description: articleData.short_description,
           content: articleData.content,
-          // category_id: Number(articleData.category_id),
-          // doctor_id: Number(articleData.doctor_id),
-          category_id: 1,
-          doctor_id: 1,
+          category_id: Number(articleData.category_id),
+          doctor_id: Number(articleData.doctor_id),
           is_published: articleData.is_published,
           published_at: articleData.published_at,
         };
@@ -216,75 +219,111 @@ export default function ArticlesPage() {
     setSort({ sortBy, sortOrder })
     setCurrentPage(1) // Reset to first page on sort
   }
-
+  const handleTestToast = () => {
+    console.log("=== TOAST DEBUG IN ARTICLES PAGE ===")
+    console.log("1. Button clicked in articles page")
+    
+    try {
+      toast({
+        title: "اختبار التوست",
+        description: "هذا اختبار للتوست مع console logs",
+        variant: "default",
+      })
+      console.log("2. Toast function called successfully")
+    } catch (error) {
+      console.error("3. Error calling toast:", error)
+    }
+  }
+  const handleErrorToast = () => {
+    console.log("=== ERROR TOAST DEBUG ===")
+    toast({
+      title: "خطأ في الاختبار",
+      description: "هذا توست خطأ للاختبار",
+      variant: "destructive",
+    })
+  }
   return (
-    <div className="overflow-x-hidden w-full">
-      <AddArticleModal
-        article={editingArticle}
-        onSave={handleSaveArticle}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        mode={modalMode}
-      />
-      <div className="flex min-h-screen flex-col w-full overflow-x-hidden">
-        <Header />
-        <div className="flex flex-1 w-full overflow-x-hidden">
-          {/* Desktop Sidebar */}
-          <div className="hidden md:block w-64 flex-shrink-0">
-            <Sidebar className="h-full border-l" />
-          </div>
+      <div className="w-full">
+        <AddArticleModal
+            article={editingArticle}
+            onSave={handleSaveArticle}
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            mode={modalMode}
+                />
+        {/* <Button 
+          onClick={handleTestToast} 
+          className="fixed top-4 left-4 z-[9998] bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-lg"
+        >
+          اختبار التوست
+        </Button> */}
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0 p-4 md:p-6 overflow-x-hidden">
-            <div className="w-full max-w-none space-y-6 animate-in fade-in-50 duration-700">
-              <ArticlesHeader
-                viewMode={viewMode}
-                onToggleView={setViewMode}
-                onFilterChange={setFilters}
-                currentFilters={filters}
-                onAddNewArticle={handleAddNewArticle}
-                visibility={visibility}
-                onVisibilityChange={setVisibility}
-
-              />
-
-              {visibility.summaryCards &&
-                (isLoading ? <ArticlesSummarySkeleton /> : stats && <ArticlesSummary stats={stats} />)}
-
-              {visibility.articlesList &&
-                (isLoading ? (
-                  viewMode === "grid" ? (
-                    <ArticlesGridSkeleton />
-                  ) : (
-                    <ArticlesTableSkeleton />
-                  )
-                ) : viewMode === "grid" ? (
-                  <ArticlesGridView
-                    articles={currentArticles}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    onEdit={handleEditArticle}
-                    onDelete={handleDeleteArticle}
-                    onView={handleViewArticle}
-                  />
-                ) : (
-                  <ArticlesTableView
-                    articles={currentArticles}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    onEdit={handleEditArticle}
-                    onDelete={handleDeleteArticle}
-                    onView={handleViewArticle}
-                    onSort={handleSort}
-                    currentSort={sort}
-                  />
-                ))}
+        <div className="flex min-h-screen flex-col w-full">
+          <Header/>
+          <div className="flex flex-1 w-full overflow-x-hidden">
+            {/* Desktop Sidebar */}
+            <div className="hidden md:block w-64 flex-shrink-0">
+              <Sidebar className="h-full border-l"/>
             </div>
-          </main>
+
+            {/* Main Content */}
+            <main className="flex-1 min-w-0 p-4 md:p-6">
+              <div className="w-full max-w-none space-y-6 animate-in fade-in-50 duration-700">
+                <div className="flex justify-between items-center mb-4">
+                  <ArticlesHeader
+                      viewMode={viewMode}
+                      onToggleView={setViewMode}
+                      onFilterChange={handleFilterChange}
+                      currentFilters={filters}
+                      onAddNewArticle={handleAddNewArticle}
+                      visibility={visibility}
+                      onVisibilityChange={setVisibility}
+                  />
+                  {/* <Button 
+                    onClick={handleTestToast} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  >
+                    اختبار التوست 2
+                  </Button> */}
+                </div>
+
+                {visibility.summaryCards &&
+                    (isLoading ? <ArticlesSummarySkeleton/> : stats && <ArticlesSummary stats={stats}/>)}
+
+                {visibility.articlesList &&
+                    (isLoading ? (
+                        viewMode === "grid" ? (
+                            <ArticlesGridSkeleton/>
+                        ) : (
+                            <ArticlesTableSkeleton/>
+                        )
+                    ) : viewMode === "grid" ? (
+                        <ArticlesGridView
+                            articles={currentArticles}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            onEdit={handleEditArticle}
+                            onDelete={handleDeleteArticle}
+                            onView={handleViewArticle}
+                        />
+                    ) : (
+                        <ArticlesTableView
+                            articles={currentArticles}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            onEdit={handleEditArticle}
+                            onDelete={handleDeleteArticle}
+                            onView={handleViewArticle}
+                            onSort={handleSort}
+                            currentSort={sort}
+                        />
+                    ))}
+              </div>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
   )
 }
