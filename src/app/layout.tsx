@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import { Cairo } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { CustomToaster } from "@/components/ui/custom-toaster"
+import { AuthProvider } from "@/components/auth/auth-provider"
 
 const cairo = Cairo({
   subsets: ["latin", "arabic"],
@@ -26,9 +27,12 @@ export default function RootLayout({
     //   <body className={`${cairo.className} overflow-x-hidden`}>
     <html lang="ar" dir="rtl">
       <body className={`${cairo.className}`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="min-h-screen w-full">{children}</div>
-          <Toaster />
+      {/* <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange> */}
+        <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <div className="min-h-screen w-full">{children}</div>
+            <CustomToaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

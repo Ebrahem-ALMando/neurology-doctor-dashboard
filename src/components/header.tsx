@@ -8,12 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MobileSidebar } from "./mobile-sidebar"
-import { useEffect, useState } from "react"
-import type { User } from "@/services/auth.service"
+import { useAuth } from "@/hooks/useAuth"
+import type { User } from "@/api/services/auth"
 
 export function Header() {
   const { setTheme, theme } = useTheme()
-  const [user, setUser] = useState<User | null>(null)
+  const { user } = useAuth()
   const today = new Date()
   const arabicDate = new Intl.DateTimeFormat("ar-EG", {
     weekday: "long",
@@ -21,15 +21,6 @@ export function Header() {
     month: "long",
     day: "numeric",
   }).format(today)
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user")
-      if (storedUser) {
-        setUser(JSON.parse(storedUser))
-      }
-    }
-  }, [])
 
   const userDisplayName = user?.name || "د. جيمس ويلسون"
   const userAvatarFallback = user?.name

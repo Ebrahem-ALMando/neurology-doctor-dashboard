@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, Calendar, FileText, Home, MessageSquare, Settings, Users, LogOut, HeartPulse } from "lucide-react"
+import { BarChart3, Calendar, FileText, Home, MessageSquare, Settings, Users, LogOut, HeartPulse, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
-import { logout, type User } from "@/api/services/auth.service"
-import { useToast } from "@/components/ui/use-toast" // Add this import
+import { useAuth } from "@/hooks/useAuth"
+import { useToast } from "@/components/ui/use-toast"
+import type { User } from "@/api/services/auth"
 
 interface SidebarProps {
   className?: string
@@ -18,17 +19,8 @@ interface SidebarProps {
 export function Sidebar({ className, onItemClick }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const { toast } = useToast() // Initialize useToast
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user")
-      if (storedUser) {
-        setUser(JSON.parse(storedUser))
-      }
-    }
-  }, [])
+  const { user, logout } = useAuth()
+  const { toast } = useToast()
 
   const handleItemClick = () => {
     if (onItemClick) {
@@ -37,33 +29,26 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
   }
 
   const handleLogout = async () => {
-    const result = await logout({
-      onSuccess: (message) => {
-        toast({
-          title: "نجاح",
-          description: message,
-          variant: "default",
-        })
-      },
-      onError: (message) => {
-        toast({
-          title: "خطأ",
-          description: message,
-          variant: "destructive",
-        })
-      },
-    })
-    if (!result.error) {
+    try {
+      await logout()
+      toast({
+        title: "نجاح",
+        description: "تم تسجيل الخروج بنجاح",
+        variant: "default",
+      })
       router.push("/auth/signin")
-    } else {
-      console.error("Logout failed:", result.message)
-      // Optionally show a toast notification for logout failure
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      })
     }
     handleItemClick() // Close sidebar on mobile after logout attempt
   }
 
   const userDisplayName = user?.name || "د. جيمس ويلسون"
-  const userRole = user?.specialization || user?.role || "أخصائي أمراض القلب"
+  const userRole = user?.role || "أخصائي أمراض القلب"
   const userAvatarFallback = user?.name
     ? user.name
         .split(" ")
@@ -145,6 +130,21 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
               </Link>
             </Button>
             <Button
+              variant={pathname === "/consultations" ? "secondary" : "ghost"}
+              size="lg"
+              className={cn(
+                "w-full justify-start transition-all",
+                pathname === "/consultations" &&
+                  "bg-violet-100 text-violet-900 dark:bg-violet-900/20 dark:text-violet-300 font-medium",
+              )}
+              asChild
+            >
+              <Link href="/consultations" onClick={handleItemClick}>
+                <ClipboardList className="ml-2 h-5 w-5" />
+                الاستشارات الطبية
+              </Link>
+            </Button>
+            <Button
               variant={pathname === "/articles" ? "secondary" : "ghost"}
               size="lg"
               className={cn(
@@ -204,6 +204,7 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
                 المرضى
               </Link>
             </Button>
+        
         
             <Button
               variant={pathname === "/settings" ? "secondary" : "ghost"}

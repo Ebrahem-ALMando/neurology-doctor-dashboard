@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Brain, Phone, Loader2 } from "lucide-react"
-import { login } from "@/api/services/auth.service"
-import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/hooks/useAuth"
+import { useCustomToastWithIcons } from "@/hooks/use-custom-toast-with-icons"
+import { getDeviceToken, getDeviceType } from "@/utils/device-token"
 
 interface SignInFormProps {
   onSubmit: (phoneNumber: string) => void
@@ -30,12 +31,12 @@ const countryCodes = [
   { code: "+20", country: "مصر", flag: "🇪🇬" },
 ]
 
-export function SignInForm({ onSubmit, isLoading }: SignInFormProps) {
+export function SignInForm({ onSubmit }: SignInFormProps) {
   const [countryCode, setCountryCode] = useState("+963")
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [error, setError] = useState("")
   const [isLoadingInner, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const { showLoginSuccess, showLoginError, showNetworkError } = useCustomToastWithIcons()
+  const { login,isLoading } = useAuth()
 
   const validatePhoneNumber = (phone: string) => {
     // التحقق من أن رقم الهاتف يحتوي على أرقام فقط وطوله مناسب
@@ -45,48 +46,41 @@ export function SignInForm({ onSubmit, isLoading }: SignInFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
 
     if (!phoneNumber.trim()) {
-      setError("يرجى إدخال رقم الهاتف")
+      showLoginError("يرجى إدخال رقم الهاتف")
       return
     }
 
     if (!validatePhoneNumber(phoneNumber)) {
-      setError("رقم الهاتف غير صحيح")
+      showLoginError("رقم الهاتف غير صحيح")
       return
     }
 
     setIsLoading(true)
     const fullPhoneNumber = `${countryCode}${phoneNumber}`
+    console.log(getDeviceToken())
+    console.log(getDeviceType())
+    try {
+      const result = await login({
+        phone: fullPhoneNumber,
+        role: "admin",
+        device_token: getDeviceToken(),
+        device_type: getDeviceType()
+      })
 
-    const result = await login(
-      { phone: fullPhoneNumber, role: "admin" },
-      {
-        onSuccess: (message) => {
-          toast({
-            title: "نجاح",
-            description: message,
-            variant: "default",
-          })
-        },
-        onError: (message) => {
-          toast({
-            title: "خطأ",
-            description: message,
-            variant: "destructive",
-          })
-        },
-      },
-    )
-
-    if (result.error) {
-      setError(result.message || "فشل إرسال رمز التحقق. يرجى المحاولة مرة أخرى.")
-    } else {
-      // OTP sent successfully, navigate to verify page
-      onSubmit(fullPhoneNumber)
+      if (result.success) {
+        showLoginSuccess()
+        // OTP sent successfully, navigate to verify page
+        onSubmit(fullPhoneNumber)
+      } else {
+        showLoginError(result.message)
+      }
+    } catch (error) {
+      showNetworkError()
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   return (
@@ -151,12 +145,11 @@ export function SignInForm({ onSubmit, isLoading }: SignInFormProps) {
                 disabled={isLoading}
               />
             </div>
-            {error && <p className="text-sm text-red-500 dark:text-red-400 text-right">{error}</p>}
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
             {isLoading ? (

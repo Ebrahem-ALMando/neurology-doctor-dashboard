@@ -12,24 +12,24 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  // const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  // useEffect(() => {
+  //   setMounted(true)
+  // }, [])
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50 to-blue-50">
-        <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
-          <div className="w-full max-w-md">{children}</div>
-        </div>
-      </div>
-    )
-  }
+  // if (!mounted) {
+  //   return (
+  //     <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50 to-blue-50">
+  //       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+  //         <div className="w-full max-w-md">{children}</div>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
-    <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50 to-blue-50 dark:from-violet-950 dark:via-purple-950 dark:to-blue-950">
+    <div className="min-h-screen w-full bg-gradient-to-br from-violet-50 via-purple-50 to-blue-50 dark:from-violet-950 dark:via-purple-950 dark:to-blue-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-300/20 rounded-full blur-3xl"></div>

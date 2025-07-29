@@ -8,20 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Brain, Loader2, RotateCcw, CheckCircle } from "lucide-react"
-import { verifyOTP, resendOTP } from "@/api/services/auth.service"
-import { useToast } from "@/components/ui/use-toast" // Add this import
+import { useAuth } from "@/hooks/useAuth"
+import { useCustomToastWithIcons } from "@/hooks/use-custom-toast-with-icons"
 import { useRouter } from "next/navigation"
+import { getDeviceToken, getDeviceType } from "@/utils/device-token"
 // ... (rest of the imports)
 
-export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoading }: OTPVerificationFormProps) {
+export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode }: OTPVerificationFormProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
-  const [error, setError] = useState("")
   const [countdown, setCountdown] = useState(60)
   const [canResend, setCanResend] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const { toast } = useToast() // Initialize useToast
- const router = useRouter()
+  const { showOtpSuccess, showOtpError, showResendSuccess, showResendError, showNetworkError } = useCustomToastWithIcons()
+  const router = useRouter()
+  const { verifyOtp, login,isLoading } = useAuth()
   // العد التنازلي
   useEffect(() => {
     if (countdown > 0) {
@@ -38,7 +39,6 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
     const newOtp = [...otp]
     newOtp[index] = value
     setOtp(newOtp)
-    setError("")
 
     // الانتقال إلى الحقل التالي تلقائياً
     if (value && index < 5) {
@@ -63,7 +63,6 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
     }
 
     setOtp(newOtp)
-    setError("")
 
     // التركيز على الحقل التالي أو الأخير
     const nextIndex = Math.min(pastedData.length, 5)
@@ -71,106 +70,84 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
   }
 
   const handleVerify = async (otpString: string) => {
-    const setIsLoading = (loading: boolean) => {
-      // Assuming this is a local state management function
-      // You might need to adjust this based on your actual implementation
-    }
+    try {
+      const result = await verifyOtp({
+        phone: phoneNumber,
+        role: "admin",
+        otp: otpString,
+        device_token: getDeviceToken(),
+        device_type: getDeviceType()
+      })
 
-    setIsLoading(true)
-
-    const result = await verifyOTP(
-      { phone: phoneNumber, role: "admin", otp: otpString },
-      {
-        onSuccess: (message) => {
-          toast({
-            title: "نجاح",
-            description: message,
-            variant: "default",
-          })
-        },
-        onError: (message) => {
-          toast({
-            title: "خطأ",
-            description: message,
-            variant: "destructive",
-          })
-        },
-      },
-    )
-
-    if (result.error) {
-      setError(result.message || "رمز التحقق غير صحيح")
-      setIsLoading(false)
-      return false // فشل التحقق
-    } else {
-      // Verification successful, navigate to dashboard
-      return true
+      if (result.success) {
+        showOtpSuccess()
+        return true
+      } else {
+        console.log(result.message)
+        return false
+      }
+    } catch (error) {
+      console.log(error)
+      return false
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
 
     const otpString = otp.join("")
 
     if (otpString.length !== 6) {
-      setError("يرجى إدخال الرمز كاملاً")
+      showOtpError("يرجى إدخال الرمز كاملاً")
       return
     }
-
+      console.log(getDeviceToken())
+      console.log(getDeviceType())
     const success = await handleVerify(otpString)
     
-    if (!success) {
-      setError("رمز التحقق غير صحيح")
+    if (success) {
+      // في حالة النجاح، انتقل إلى لوحة التحكم
+      router.push('/dashboard')
+    } else {
+      showOtpError("رمز التحقق غير صحيح")
       // مسح الحقول
       setOtp(["", "", "", "", "", ""])
       inputRefs.current[0]?.focus()
     }
-    router.push('/dashboard');
   }
 
   const handleResendCode = async () => {
     setIsResending(true)
-    const result = await resendOTP(phoneNumber)
+    try {
+  
+      const result = await login({
+        phone: phoneNumber,
+        role: "admin",
+        device_token: getDeviceToken(),
+        device_type: getDeviceType()
+      })
 
-    if (result.error) {
-      setError(result.message || "فشل إعادة إرسال الرمز.")
+      if (result.success) {
+        setCountdown(60)
+        setCanResend(false)
+        setOtp(["", "", "", "", "", ""])
+        showResendSuccess()
+        setIsResending(false)
+        return true
+      } else {
+        showResendError(result.message)
+        setIsResending(false)
+        return false
+      }
+    } catch (error) {
+      showNetworkError()
       setIsResending(false)
       return false
-    } else {
-      setCountdown(60)
-      setCanResend(false)
-      setError("")
-      setOtp(["", "", "", "", "", ""])
-      setIsResending(false)
-      return true
     }
   }
 
   const handleResend = async () => {
-    setIsResending(true)
-    const result = await resendOTP(phoneNumber)
-
-    if (result.error) {
-      setError(result.message || "فشل إعادة إرسال الرمز.")
-      toast({
-        title: "خطأ",
-        description: result.message || "فشل إعادة إرسال الرمز.",
-        variant: "destructive",
-      })
-    } else {
-      setCountdown(60)
-      setCanResend(false)
-      setError("")
-      setOtp(["", "", "", "", "", ""])
-      toast({
-        title: "نجاح",
-        description: result.message || "تم إعادة إرسال رمز التحقق بنجاح.",
-        variant: "default",
-      })
-    }
-    setIsResending(false)
+    return handleResendCode()
   }
 
   const formatTime = (seconds: number) => {
@@ -205,7 +182,9 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
               {otp.map((digit, index) => (
                 <Input
                   key={index}
-                  ref={(el) => (inputRefs.current[index] = el)}
+                  ref={(el) => {
+                    inputRefs.current[index] = el
+                  }}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}
@@ -218,14 +197,12 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
                 />
               ))}
             </div>
-
-            {error && <p className="text-sm text-red-500 dark:text-red-400 text-center">{error}</p>}
           </div>
 
           {/* Confirm Button */}
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading || otp.join("").length !== 6}
           >
             {isLoading ? (
@@ -253,7 +230,7 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, isLoa
             size="sm"
             onClick={handleResend}
             disabled={!canResend || isResending}
-            className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
+            className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isResending ? (
               <>

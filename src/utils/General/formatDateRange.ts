@@ -1,4 +1,4 @@
-import { format } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { arSA } from "date-fns/locale"
 
 // Dummy Hijri date conversion (for demonstration, a real implementation would use a proper Hijri calendar library)
@@ -21,35 +21,57 @@ export function toHijriDate(gregorianDate: string): string {
   return dateMap[gregorianDate] || "تاريخ غير معروف"
 }
 
-export function getRelativeTime(hijriDate: string): string {
-  // This is a simplified dummy calculation for "days ago" based on the dummy Hijri date.
-  // In a real app, this would involve proper date comparisons.
-  const todayHijri = "1446/12/3 هـ" // Assuming this is "today" for dummy data
-  if (hijriDate === todayHijri) {
-    return "اليوم"
-  }
+export function getHijriToday(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = today.getMonth() + 1
+  const day = today.getDate()
+  
+  // تحويل بسيط للتاريخ الهجري (يمكن استخدام مكتبة متخصصة مثل moment-hijri)
+  const hijriYear = year - 579
+  const hijriMonth = month
+  const hijriDay = day
+  
+  return `${hijriDay}/${hijriMonth}/${hijriYear} هـ`
+}
 
-  const dateParts = hijriDate.split(" ")[0].split("/").map(Number)
-  const todayParts = todayHijri.split(" ")[0].split("/").map(Number)
-
-  // Simple difference based on day part for dummy data
-  const dayDiff = todayParts[2] - dateParts[2]
-  if (dayDiff > 0) {
-    return `منذ ${dayDiff} يوم`
+export function getRelativeTime(dateString: string): string {
+  try {
+    // التحقق من أن dateString موجود وصحيح
+    if (!dateString || dateString.trim() === '') {
+      return "تاريخ غير محدد"
+    }
+    
+    const date = new Date(dateString)
+    
+    // التحقق من أن التاريخ صحيح
+    if (isNaN(date.getTime())) {
+      return "تاريخ غير صحيح"
+    }
+    
+    return formatDistanceToNow(date, { addSuffix: true, locale: arSA })
+  } catch (error) {
+    console.error("Error formatting relative time:", error)
+    return "تاريخ غير محدد"
   }
-  // Fallback for older dates not covered by simple day diff
-  return `منذ ${hijriOffsetDays + Math.abs(dayDiff)} يوم`
 }
 
 export function formatDateRange(startDate?: Date, endDate?: Date): string {
   if (!startDate && !endDate) {
-    return "كل التواريخ"
+    return "اختر التاريخ"
   }
-  if (startDate && !endDate) {
-    return `منذ ${format(startDate, "yyyy-MM-dd", { locale: arSA })}`
+  
+  if (startDate && endDate) {
+    return `${format(startDate, "dd/MM/yyyy", { locale: arSA })} - ${format(endDate, "dd/MM/yyyy", { locale: arSA })}`
   }
-  if (!startDate && endDate) {
-    return `حتى ${format(endDate, "yyyy-MM-dd", { locale: arSA })}`
+  
+  if (startDate) {
+    return `من ${format(startDate, "dd/MM/yyyy", { locale: arSA })}`
   }
-  return `${format(startDate!, "yyyy-MM-dd", { locale: arSA })} - ${format(endDate!, "yyyy-MM-dd", { locale: arSA })}`
+  
+  if (endDate) {
+    return `إلى ${format(endDate, "dd/MM/yyyy", { locale: arSA })}`
+  }
+  
+  return "اختر التاريخ"
 }
