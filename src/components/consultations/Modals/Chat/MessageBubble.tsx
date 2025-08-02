@@ -1,10 +1,11 @@
 "use client"
 
-import { Check, CheckCheck, Eye, Download, X, Image as ImageIcon, File, Trash2, MoreVertical, Edit } from "lucide-react"
+import { Check, CheckCheck, Eye, Download, X, Image as ImageIcon, File, Trash2, MoreVertical, Edit, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "./UserAvatar"
 import type { ConsultationMessage } from "@/api/services/consultationsmessages/types"
+import { DownloadButton } from "./DownloadButton"
 
 interface MessageBubbleProps {
   message: ConsultationMessage;
@@ -13,6 +14,7 @@ interface MessageBubbleProps {
   onDownloadAttachment: (attachment: any) => void;
   onDeleteMessage: (messageId: number) => void;
   onEditMessage?: (messageId: number, newText: string) => void;
+  isViewOnly?: boolean;
 }
 
 export function MessageBubble({ 
@@ -21,7 +23,8 @@ export function MessageBubble({
   onPreviewAttachment, 
   onDownloadAttachment, 
   onDeleteMessage,
-  onEditMessage
+  onEditMessage,
+  isViewOnly = false
 }: MessageBubbleProps) {
   const messageDate = new Date(message.created_at)
   const oneHourPassed = (Date.now() - messageDate.getTime()) > 3600 * 1000
@@ -34,7 +37,7 @@ export function MessageBubble({
     }`}>
 
       {/* قائمة الخيارات (3 نقاط) */}
-      {isMe && !oneHourPassed && (
+      {isMe && !oneHourPassed && !isViewOnly && (
         <div className="absolute top-2 left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -82,7 +85,7 @@ export function MessageBubble({
                 ) : (
                   <File className="h-4 w-4 text-gray-500" />
                 )}
-                <span className="text-xs font-medium">{att.original_name}</span>
+                <span className="text-xs font-medium text-gray-500">{att.original_name}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Button 
@@ -91,16 +94,16 @@ export function MessageBubble({
                   className="h-6 w-6 p-1 hover:bg-blue-100 dark:hover:bg-blue-900" 
                   onClick={() => onPreviewAttachment(att)}
                 >
-                  <Eye className="h-3 w-3" />
+                  <Eye className="h-3 w-3 text-amber-500" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 p-1 hover:bg-green-100 dark:hover:bg-green-900" 
-                  onClick={() => onDownloadAttachment(att)}
-                >
-                  <Download className="h-3 w-3" />
-                </Button>
+                <DownloadButton
+                onDownload={async () => {
+                  await onDownloadAttachment(att)
+                }}
+                onCancel={() => {
+                  console.log("تم إلغاء التحميل")
+                }}
+              />
               </div>
             </div>
           ))}

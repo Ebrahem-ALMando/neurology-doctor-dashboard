@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, Calendar, FileText, Home, MessageSquare, Settings, Users, LogOut, HeartPulse, ClipboardList } from "lucide-react"
+import { BarChart3, Calendar, FileText, Home, MessageSquare, Settings, Users, LogOut, HeartPulse, ClipboardList,MessageSquareText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
-import { useToast } from "@/components/ui/use-toast"
-import type { User } from "@/api/services/auth"
+import { useProfile } from "@/hooks/useProfile"
+import { useCustomToastWithIcons } from "@/hooks/use-custom-toast-with-icons"
 
 interface SidebarProps {
   className?: string
@@ -19,8 +19,9 @@ interface SidebarProps {
 export function Sidebar({ className, onItemClick }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, logout } = useAuth()
-  const { toast } = useToast()
+  const { logout } = useAuth()
+  const { profile, isLoading: profileLoading } = useProfile()
+  const { showLoginSuccess, showLoginError, showNetworkError, showLogoutSuccess, showLogoutError } = useCustomToastWithIcons()
 
   const handleItemClick = () => {
     if (onItemClick) {
@@ -31,33 +32,31 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
   const handleLogout = async () => {
     try {
       await logout()
-      toast({
-        title: "نجاح",
-        description: "تم تسجيل الخروج بنجاح",
-        variant: "default",
-      })
+      showLogoutSuccess()
       router.push("/auth/signin")
     } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تسجيل الخروج",
-        variant: "destructive",
-      })
+      showLogoutError()
     }
     handleItemClick() // Close sidebar on mobile after logout attempt
   }
 
-  const userDisplayName = user?.name || "د. جيمس ويلسون"
-  const userRole = user?.role || "أخصائي أمراض القلب"
-  const userAvatarFallback = user?.name
-    ? user.name
+  // استخدام بيانات المستخدم من API الجديد
+  const userDisplayName = profile?.user?.name || "د. مهران"
+  const userRole = profile?.user?.role === 'doctor' ? 'طبيب' : 
+                   profile?.user?.role === 'admin' ? 'مدير' :
+                   profile?.user?.role === 'receptionist' ? 'موظف استقبال' :
+                   profile?.user?.role === 'patient' ? 'مريض' : 'أخصائي أمراض القلب'
+  
+  const userAvatarFallback = profile?.user?.name
+    ? profile.user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "JW"
-  const userAvatarImage = user?.avatar || "/placeholder.svg?height=64&width=64"
+  
+  const userAvatarImage = profile?.user?.avatar_url || profile?.user?.avatar || "/placeholder.svg?height=64&width=64"
 
   return (
     <div className={cn("pb-12 border-l relative", className)}>
@@ -67,9 +66,9 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
           <div className="flex flex-col items-center justify-center space-y-2">
             <div className="relative z-10">
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-500 to-violet-300 blur-md opacity-30"></div>
-              <Avatar className="h-16 w-16 border-2 border-white dark:border-gray-800 shadow-md relative z-20">
+              <Avatar className="h-16 w-16 border-2 border-white dark:border-gray-800 shadow-md relative z-20 ">
                 <AvatarImage src={userAvatarImage || "/placeholder.svg"} alt={userDisplayName} />
-                <AvatarFallback className="bg-violet-100 text-violet-700">{userAvatarFallback}</AvatarFallback>
+                <AvatarFallback className="text-white text-xs font-medium">{userAvatarFallback}</AvatarFallback>
               </Avatar>
             </div>
             <div className="text-center relative z-20">
@@ -140,7 +139,7 @@ export function Sidebar({ className, onItemClick }: SidebarProps) {
               asChild
             >
               <Link href="/consultations" onClick={handleItemClick}>
-                <ClipboardList className="ml-2 h-5 w-5" />
+                <MessageSquareText className="ml-2 h-5 w-5" />
                 الاستشارات الطبية
               </Link>
             </Button>

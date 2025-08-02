@@ -11,6 +11,7 @@ interface InputSectionProps {
   input: string;
   files: File[];
   isLoading: boolean;
+  eventLoading: boolean;
   uploading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSend: () => void;
@@ -21,12 +22,15 @@ interface InputSectionProps {
   validateFileType: (file: File) => boolean;
   isEditing?: boolean;
   onCancelEdit?: () => void;
+  disabled?: boolean;
+  isViewOnly?: boolean;
 }
 
 export function InputSection({
   input,
   files,
   isLoading,
+  eventLoading,
   uploading,
   onInputChange,
   onSend,
@@ -36,7 +40,9 @@ export function InputSection({
   validateFileSize,
   validateFileType,
   isEditing = false,
-  onCancelEdit
+  onCancelEdit,
+  disabled,
+  isViewOnly
 }: InputSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -72,7 +78,7 @@ export function InputSection({
             size="icon" 
             onClick={handleFileButtonClick}
             className="shrink-0"
-            disabled={isLoading || uploading || isEditing}
+            disabled={isLoading || uploading || isEditing || eventLoading || disabled}
           >
             <Paperclip className="h-5 w-5" />
           </Button>
@@ -83,14 +89,15 @@ export function InputSection({
             ref={fileInputRef} 
             onChange={onFileChange}
             accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
+            disabled={disabled}
           />
           <Textarea
             className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-            placeholder={isEditing ? "عدل رسالتك هنا..." : "اكتب رسالتك هنا..."}
+            placeholder={isEditing ? "عدل رسالتك هنا..." : disabled&&!isViewOnly ? "لا يمكن الكتابة - الاستشارة مغلقة" : isViewOnly ? "لا يمكن الكتابة - قيد المشاهدة " :  "اكتب رسالتك هنا..."}
             value={input}
             onChange={onInputChange}
             onKeyDown={handleKeyDown}
-            disabled={isLoading || uploading}
+            disabled={isLoading || uploading || eventLoading || disabled}
             rows={1}
             style={{
               resize: 'none',
@@ -107,7 +114,7 @@ export function InputSection({
               <Button 
                 variant="outline" 
                 onClick={onCancelEdit}
-                disabled={isLoading || uploading}
+                disabled={isLoading || uploading || eventLoading || disabled}
                 className="text-gray-600 hover:text-gray-800"
               >
                 <X className="h-4 w-4" />
@@ -115,10 +122,10 @@ export function InputSection({
             )}
             <Button 
               onClick={onSend} 
-              disabled={isLoading || uploading || (!input.trim() && files.length === 0)} 
+              disabled={isLoading || uploading || eventLoading || (!input.trim() || (files.length === 0 &&!input.trim())) || disabled} 
               className="bg-blue-500 text-white hover:bg-blue-600"
             >
-              {isLoading || uploading ? (
+              {isLoading || uploading || eventLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />

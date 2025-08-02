@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react"
 import useSWR from "swr"
-import { getConsultations } from "@/api/services/consultations"
+import { deleteConsultation, getConsultations } from "@/api/services/consultations"
 import type { Consultation, GetConsultationsParams } from "@/api/services/consultations"
 import type { DateRange } from "react-day-picker"
+import { useCustomToastWithIcons } from "./use-custom-toast-with-icons"
 
+
+
+  
 export interface ConsultationStats {
   totalConsultations: number
   openConsultations: number
@@ -39,6 +43,8 @@ export interface UseConsultationsReturn {
     itemsPerPage: number
   }
   mutate: () => void
+  handleDelete: (id: number,onSuccess:()=>void ,onError:()=>void ) => void 
+  eventIsLoading: boolean
 }
 
 const initialFilters: ConsultationsFilters = {
@@ -49,6 +55,7 @@ const initialFilters: ConsultationsFilters = {
 }
 
 export function useConsultations(): UseConsultationsReturn {
+  const [eventIsLoading, setEventIsLoading] = useState(false)
   const [filters, setFilters] = useState<ConsultationsFilters>(initialFilters)
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -150,6 +157,19 @@ export function useConsultations(): UseConsultationsReturn {
     }
   }
 
+  const handleDelete = async (id: number,onSuccess:()=>void ,onError:()=>void ) => {
+    setEventIsLoading(true)
+    const response = await deleteConsultation(id)
+    if (response.data && !response.error) {
+      onSuccess() 
+      mutate()
+    }
+    else{
+      onError()
+    }
+    setEventIsLoading(false)
+  }
+    
   return {
     consultations: data?.data || [],
     stats,
@@ -159,5 +179,7 @@ export function useConsultations(): UseConsultationsReturn {
     setFilters,
     pagination,
     mutate: () => mutate(),
+    handleDelete, 
+    eventIsLoading
   }
 } 

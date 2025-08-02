@@ -245,7 +245,7 @@
 
 import Cookies from "js-cookie"
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") || "https://prog.eilmalriyada.com"
+const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") || "https://prog.eilmalriyada.com/api/"
 
 export interface APIResponse<T = any> {
   error: boolean
@@ -347,11 +347,12 @@ export const fetchAPI = async <T = any>(
       meta: responseData?.meta,
     }
   } catch (error: any) {
+    console.log(error)
     clearTimeout(timeoutId)
     const errorMessage = error.name === "AbortError"
         ? "انتهت مهلة الاتصال"
         : error.message || "حدث خطأ في الاتصال"
-
+      
     if (config.showError) console.warn(`❌ [${endpoint}] ${errorMessage}`)
 
     return {

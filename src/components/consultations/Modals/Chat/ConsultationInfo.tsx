@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageCircle, Calendar, User, Clock, FileText, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { MessageCircle, Calendar, User, Clock, FileText, CheckCircle, XCircle, AlertCircle, Unlock, Lock, Trash2   } from "lucide-react"
 
 interface ConsultationInfoProps {
   consultation: any;
@@ -11,13 +11,19 @@ export function ConsultationInfo({ consultation, subject }: ConsultationInfoProp
   if (!consultation) return null
 
   const getStatusIcon = (status: string) => {
+     
     switch (status) {
       case 'open': 
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <Unlock className="h-4 w-4 text-green-500" />
       case 'closed': 
-        return <XCircle className="h-4 w-4 text-red-500" />
-      case 'pending': 
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
+        return <Lock className="h-4 w-4 text-red-500" />
+      case 'waiting_response': 
+        return <Clock className="h-4 w-4 text-yellow-500" />
+      case 'cancelled': 
+        return <Trash2 className="h-4 w-4 text-red-500" />
+      case 'answered': 
+        return <MessageCircle className="h-4 w-4 text-green-500" />
+
       default: 
         return <MessageCircle className="h-4 w-4 text-gray-500" />
     }
@@ -27,7 +33,9 @@ export function ConsultationInfo({ consultation, subject }: ConsultationInfoProp
     switch (status) {
       case 'open': return 'مفتوحة'
       case 'closed': return 'مغلقة'
-      case 'pending': return 'قيد الانتظار'
+      case 'waiting_response': return 'قيد الانتظار'
+      case 'cancelled': return 'ملغية'
+      case 'answered': return 'تم الرد'
       default: return status
     }
   }

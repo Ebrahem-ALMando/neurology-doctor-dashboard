@@ -1,10 +1,10 @@
 "use client"
 
-import { Plus, Settings, SlidersHorizontal, LayoutGrid, List, MessageCircleIcon } from "lucide-react"
+import { Plus, Settings, SlidersHorizontal, LayoutGrid, List, MessageCircleIcon ,MessageSquareText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { getHijriToday } from "@/utils/General/formatDateRange"
-import { AddConsultationModal } from "./add-consultation-modal"
+
 import { ConsultationsCustomizer, type ConsultationsSectionVisibility } from "./consultations-customizer"
 import { ReactNode } from "react"
 
@@ -21,7 +21,7 @@ export function ConsultationsHeader({ onAddNew, children }: ConsultationsHeaderP
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
-            <MessageCircleIcon className="h-6 w-6" />
+            <MessageSquareText className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">الاستشارات الطبية</h1>
@@ -30,12 +30,12 @@ export function ConsultationsHeader({ onAddNew, children }: ConsultationsHeaderP
         </div>
         <div className="flex items-center gap-2">
           {children}
-          <AddConsultationModal>
+          {/* <AddConsultationModal>
             <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" onClick={onAddNew}>
               <Plus className="h-4 w-4" />
               إضافة استشارة جديدة
             </Button>
-          </AddConsultationModal>
+          </AddConsultationModal> */}
         </div>
       </div>
       <Separator />

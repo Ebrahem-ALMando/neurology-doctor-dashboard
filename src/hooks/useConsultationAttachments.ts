@@ -1,86 +1,74 @@
 import { useState } from "react"
-import { apiHelpers } from "@/api/apiHelpers"
-import type { APIResponse } from "@/api/api"
-
-interface AttachmentData {
-  file_name: string
-  original_name: string
-  file_path: string
-  file_type: string
-  file_url: string
-}
-
-interface UploadAttachmentResponse {
-  status: number
-  message: string
-  data: AttachmentData
-}
-
-interface DeleteAttachmentResponse {
-  status: number
-  message: string
-  data: null
-}
+import { deleteConsultationAttachment } from "@/api/services/consultationattachments"
+import { uploadFiles } from "@/api/services/general"
+import { fetchAPI } from "@/api/api"
+import type { ConsultationAttachment } from "@/api/services/consultationattachments"
+import type { UploadFilesResponse } from "@/api/services/general"
+import { getTokenWithClient } from "@/utils/Token/getTokenWithClient"
+import { downloadFile } from "@/api/services/general/downloadFile"
 
 export function useConsultationAttachments() {
   const [uploading, setUploading] = useState(false)
-
-  // رفع مرفق جديد
-  const uploadAttachment = async (consultationId: number, file: File): Promise<AttachmentData | null> => {
+  const [isStartDownloading, setIsStartDownloading] = useState(false)
+  // دالة موحدة لرفع الملفات (واحد أو عدة)
+  const uploadAttachments = async (
+    files: File[], 
+    onError: () => void
+  ): Promise<ConsultationAttachment[]> => {
     setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('consultation_id', consultationId.toString())
+    
+    const response = await uploadFiles(files, "consultations/attachments")
 
-      const response = await apiHelpers.upload<UploadAttachmentResponse>(
-        'consultation-attachments',
-        formData,
-        { showSuccess: true }
-      )
-
-      if (response.error) {
-        throw new Error(response.message || 'فشل في رفع المرفق')
-      }
-
-      return response.data?.data || null
-    } catch (error) {
-      console.error('Error uploading attachment:', error)
-      throw error
-    } finally {
-      setUploading(false)
+    if (response.error) {
+      onError()
+      return []
     }
+
+    const uploadedFiles = response.data?.uploaded || []
+    
+    if (uploadedFiles.length === 0) {
+      onError()
+      return []
+    }
+
+    const attachments: ConsultationAttachment[] = uploadedFiles.map(file => ({
+      original_name: file.original_name,
+      file_name: file.file_name,
+      file_type: file.file_type,
+      file_path: file.file_path,
+      file_url: file.file_url
+    }))
+
+    setUploading(false)
+    return attachments
   }
 
   // حذف مرفق
-  const deleteAttachment = async (attachmentId: number): Promise<boolean> => {
-    try {
-      const response = await apiHelpers.delete<DeleteAttachmentResponse>(
-        `consultation-attachments/${attachmentId}`,
-        { showSuccess: true }
-      )
+  const deleteAttachment = async (attachmentId: number, onError: () => void): Promise<boolean> => {
+    const response = await deleteConsultationAttachment(attachmentId)
 
-      if (response.error) {
-        throw new Error(response.message || 'فشل في حذف المرفق')
-      }
-
-      return true
-    } catch (error) {
-      console.error('Error deleting attachment:', error)
-      throw error
+    if (response.error) {
+      onError()
     }
+
+    return true
   }
 
   // تحميل مرفق
-  const downloadAttachment = (fileUrl: string, fileName: string) => {
-    const link = document.createElement('a')
-    link.href = fileUrl
-    link.download = fileName
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  const downloadAttachment = async (fileUrl: string, onError: () => void , onSuccess: () => void) => {
+    try {
+      setIsStartDownloading(true)
+      // استدعاء دالة تحميل الملف
+      await downloadFile(fileUrl);
+      setIsStartDownloading(false)
+      onSuccess()
+    } catch (error) {
+      console.error("Error downloading attachment:", error);
+      onError();
+      setIsStartDownloading(false)
+    } 
+  };
+  
 
   // فتح مرفق في نافذة جديدة
   const openAttachment = (fileUrl: string) => {
@@ -121,12 +109,14 @@ export function useConsultationAttachments() {
 
   return {
     uploading,
-    uploadAttachment,
+    uploadAttachments,
     deleteAttachment,
     downloadAttachment,
     openAttachment,
     getFileType,
     validateFileSize,
     validateFileType,
+    isStartDownloading,
+    setIsStartDownloading
   }
 } 

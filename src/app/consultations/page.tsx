@@ -10,7 +10,7 @@ import { ConsultationsTableView } from "@/components/consultations/consultations
 import { ConsultationsPagination } from "@/components/consultations/consultations-pagination"
 import { ConsultationsLoadingSkeleton } from "@/components/consultations/consultations-loading-skeleton"
 import { ConsultationsCustomizer, type ConsultationsSectionVisibility } from "@/components/consultations/consultations-customizer"
-import { AddConsultationModal } from "@/components/consultations/add-consultation-modal"
+import { AddConsultationModal } from "@/components/consultations/Modals/add-consultation-modal"
 import { useToast } from "@/components/ui/use-toast"
 import { useConsultations } from "@/hooks/useConsultations"
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -67,14 +67,7 @@ export default function ConsultationsPage() {
     mutate()
   }
 
-  const handleDelete = (id: string) => {
-    toast({
-      title: "نجاح",
-      description: "تم حذف الاستشارة بنجاح.",
-      variant: "default",
-    })
-    mutate()
-  }
+
 
   return (
     <div className="w-full">
@@ -126,7 +119,7 @@ export default function ConsultationsPage() {
                         loading={isLoading}
                         onViewDetails={handleViewDetails}
                         onMarkAsDone={handleMarkAsDone}
-                        onDelete={handleDelete}
+                        mutate={mutate}
                       />
                       <ConsultationsPagination
                         currentPage={pagination.currentPage}

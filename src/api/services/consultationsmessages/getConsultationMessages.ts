@@ -1,7 +1,7 @@
 import {APIResponse, fetchAPI} from "@/api/api"
 import ApiConfig from "@/api/apiConfig"
 import { getTokenWithClient } from "@/utils/Token/getTokenWithClient"
-import type {ConsultationMessagesResponse, GetConsultationMessagesParams } from "./types"
+import type {ConsultationMessage, ConsultationMessagesResponse, GetConsultationMessagesParams } from "./types"
 
 /**
  * الحصول على رسائل استشارة محددة
@@ -12,7 +12,7 @@ import type {ConsultationMessagesResponse, GetConsultationMessagesParams } from 
 export const getConsultationMessages = async (
   consultationId: number,
   params: GetConsultationMessagesParams = {}
-): Promise<APIResponse<ConsultationMessagesResponse[]>> => {
+):Promise<APIResponse<ConsultationMessage[]>> => {
   const endPointKey = "consultations"
   const token = getTokenWithClient()
 
@@ -28,11 +28,10 @@ export const getConsultationMessages = async (
   const endpoint = `${endPointKey}/${consultationId}/messages${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
 
   const res = await fetchAPI(endpoint, "GET", null, {
-    next: {
-      revalidate: ApiConfig.revalidateTime,
-      tags: [endPointKey, `consultation-${consultationId}`, "messages"],
-    },
-  })
+    cache: "no-store",
+    next: { revalidate: 0 },
+  }
+  )
 
   return res ?? []
 } 

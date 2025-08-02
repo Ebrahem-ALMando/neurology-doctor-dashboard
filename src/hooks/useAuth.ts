@@ -34,7 +34,7 @@ export const useAuth = (): UseAuthReturn => {
           setUser(userData)
           setIsAuthenticated(true)
         } catch (error) {
-          // إذا كان هناك خطأ في تحليل بيانات المستخدم، احذف الكوكيز
+        
           deleteCookie("token")
           deleteCookie("user")
           setIsAuthenticated(false)

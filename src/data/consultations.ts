@@ -23,7 +23,7 @@ export interface Patient {
   email?: string
 }
 
-export type ConsultationStatus = "new" | "in-progress" | "completed" | "rejected"
+export type ConsultationStatus = "open" | "waiting_response" | "answered" | "closed" | "cancelled"
 
 export interface Consultation {
   id: string
@@ -79,7 +79,7 @@ export const dummyConsultations: Consultation[] = [
     type: "text",
     topic: "استشارة حول آلام في الصدر",
     code: "CONS-001",
-    status: "new",
+    status: "open",
     date: "2024-01-15T10:30:00Z",
   },
   {
@@ -89,7 +89,7 @@ export const dummyConsultations: Consultation[] = [
     type: "audio",
     topic: "متابعة حالة الطفل",
     code: "CONS-002",
-    status: "in-progress",
+    status: "waiting_response",
     date: "2024-01-14T14:20:00Z",
     audioUrl: "/audio/consultation-2.mp3",
   },
@@ -100,7 +100,7 @@ export const dummyConsultations: Consultation[] = [
     type: "follow-up",
     topic: "متابعة بعد العملية",
     code: "CONS-003",
-    status: "completed",
+    status: "answered",
     date: "2024-01-13T09:15:00Z",
   },
 ]

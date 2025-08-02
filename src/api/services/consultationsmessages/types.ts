@@ -37,11 +37,11 @@ export interface ConsultationMessagesMeta {
 }
 
 export interface ConsultationMessagesResponse {
-  status: number
-  message: string
   data: ConsultationMessage[]
   meta: ConsultationMessagesMeta
 }
+
+
 
 // Get consultation messages params
 export interface GetConsultationMessagesParams {
@@ -76,12 +76,12 @@ export interface CreateConsultationMessageResponse {
 export interface UpdateConsultationMessageData {
   subject?: string
   message?: string
-  attachments?: {
-    file_name: string
-    original_name: string
-    file_path: string
-    file_type: string
-  }[]
+  // attachments?: {
+  //   file_name: string
+  //   original_name: string
+  //   file_path: string
+  //   file_type: string
+  // }[]
 }
 
 export interface UpdateConsultationMessageResponse {

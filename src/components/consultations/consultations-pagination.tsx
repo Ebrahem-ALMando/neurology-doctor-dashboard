@@ -47,8 +47,11 @@ export function ConsultationsPagination({
 
   return (
     <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground w-[250px] flex justify-between">
+      الصفحة {currentPage} من {totalPages}
+      {/* <span className="text-sm text-muted-foreground">
         عرض {startItem} إلى {endItem} من أصل {totalItems} استشارة
+      </span> */}
       </div>
       <Pagination dir="rtl">
         <PaginationContent>

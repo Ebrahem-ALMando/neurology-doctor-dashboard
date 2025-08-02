@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { X, Download, Eye, File, Image as ImageIcon, FileText } from "lucide-react"
-
+  
 interface LocalFilePreviewProps {
   files: File[];
   onRemoveFile: (index: number) => void;
@@ -120,7 +120,7 @@ export function LocalFilePreview({ files, onRemoveFile }: LocalFilePreviewProps)
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {getFileIcon(previewFile)}

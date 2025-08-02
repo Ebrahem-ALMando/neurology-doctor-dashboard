@@ -2,32 +2,27 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, Image as ImageIcon, File, X } from "lucide-react"
+import { Download, FileText, Image as ImageIcon, File, X, Loader2 } from "lucide-react"
+import { useState } from "react"
 
 interface AttachmentPreviewModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   attachment: any;
+  onDownloadAttachment: (attachment: any) => void;
 }
 
-export function AttachmentPreviewModal({ open, onOpenChange, attachment }: AttachmentPreviewModalProps) {
+export function AttachmentPreviewModal({ open, onOpenChange, attachment,  onDownloadAttachment}: AttachmentPreviewModalProps) {
   if (!attachment) return null
 
   const isImage = attachment.file_type?.startsWith('image/') || attachment.file_type === 'image'
   const isPDF = attachment.file_type === 'application/pdf' || attachment.file_type === 'pdf'
+  const [isDownload,setIsDownload] = useState(false)
 
-  const handleDownload = () => {
-    const link = document.createElement('a')
-    link.href = attachment.file_url
-    link.download = attachment.original_name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isImage ? (
@@ -64,9 +59,13 @@ export function AttachmentPreviewModal({ open, onOpenChange, attachment }: Attac
               <h3 className="text-lg font-semibold mb-2">{attachment.original_name}</h3>
               <p className="text-gray-500 mb-4">لا يمكن معاينة هذا النوع من الملفات</p>
               <div className="flex gap-2">
-                <Button onClick={handleDownload} className="bg-blue-500 hover:bg-blue-600">
+                <Button onClick={ async () => {
+                  setIsDownload(true)
+                  await onDownloadAttachment(attachment)
+                  setIsDownload(false)
+                }} className="bg-blue-500 hover:bg-blue-600">
                   <Download className="h-4 w-4 mr-2" />
-                  تحميل الملف
+                  {isDownload ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "تحميل الملف"}
                 </Button>
                 <Button variant="outline" onClick={() => window.open(attachment.file_url, '_blank')}>
                   فتح في نافذة جديدة
@@ -81,9 +80,13 @@ export function AttachmentPreviewModal({ open, onOpenChange, attachment }: Attac
             نوع الملف: {attachment.file_type || 'غير محدد'}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownload}>
+            <Button variant="outline" onClick={ async () => {
+                  setIsDownload(true)
+                  await onDownloadAttachment(attachment)
+                  setIsDownload(false)
+                }}>
               <Download className="h-4 w-4 mr-2" />
-              تحميل
+              {isDownload ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "تحميل"}
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4 mr-2" />
