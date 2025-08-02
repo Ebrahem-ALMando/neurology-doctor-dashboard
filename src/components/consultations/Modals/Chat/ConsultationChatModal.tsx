@@ -185,14 +185,16 @@ export default function ConsultationChatModal(
       })
       
    
-      changeConsultationStatus(Number(consultationId) , {
-        status: "answered"
-      },
-      () => {
-        logmutate()
-      },
-      false
-      )
+      if(consultation?.status !== "answered"){
+        changeConsultationStatus(Number(consultationId) , {
+          status: "answered"
+        },
+        () => {
+          logmutate()
+        },
+        false
+        )
+      }
       refetch()
       setInput("")
       setFiles([])

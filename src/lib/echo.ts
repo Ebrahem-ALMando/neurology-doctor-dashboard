@@ -28,12 +28,26 @@ const getEchoConfig = () => {
   }
 }
 
-export const echo = new Echo(getEchoConfig())
+// تهيئة Echo فقط في المتصفح
+let echo: Echo | null = null
+
+if (typeof window !== "undefined") {
+  echo = new Echo(getEchoConfig())
+}
+
+// دالة للحصول على Echo
+export const getEcho = (): Echo | null => {
+  if (!echo && typeof window !== "undefined") {
+    echo = new Echo(getEchoConfig())
+  }
+  return echo
+}
 
 // دالة لتحديث التوكن في Echo
 export const updateEchoToken = (token: string) => {
-  if (echo.connector.options.auth?.headers) {
-    echo.connector.options.auth.headers.Authorization = `Bearer ${token}`
+  const echoInstance = getEcho()
+  if (echoInstance?.connector.options.auth?.headers) {
+    echoInstance.connector.options.auth.headers.Authorization = `Bearer ${token}`
   }
 }
 
@@ -41,9 +55,17 @@ export const updateEchoToken = (token: string) => {
 export const subscribeToConsultation = (consultationId: number, onNewMessage: (message: any) => void, onTyping: (data: any) => void) => {
   console.log('🔗 subscribeToConsultation - consultationId:', consultationId)
   
+  const echoInstance = getEcho()
+  if (!echoInstance) {
+    console.error('❌ Echo not available')
+    return {
+      unsubscribe: () => {}
+    }
+  }
+  
   try {
     // الاشتراك في قناة الرسائل
-    const consultationChannel = echo.private(`consultation.${consultationId}`)
+    const consultationChannel = echoInstance.private(`consultation.${consultationId}`)
     console.log('📡 Subscribed to consultation channel:', `consultation.${consultationId}`)
     
     consultationChannel.listen('NewConsultationMessage', (e: any) => {
@@ -53,7 +75,7 @@ export const subscribeToConsultation = (consultationId: number, onNewMessage: (m
     })
 
     // الاشتراك في قناة مؤشر الكتابة
-    const typingChannel = echo.private(`typing.consultation.${consultationId}`)
+    const typingChannel = echoInstance.private(`typing.consultation.${consultationId}`)
     console.log('📡 Subscribed to typing channel:', `typing.consultation.${consultationId}`)
     
     typingChannel.listen('TypingIndicator', (e: any) => {
@@ -65,8 +87,8 @@ export const subscribeToConsultation = (consultationId: number, onNewMessage: (m
     return {
       unsubscribe: () => {
         console.log('🔌 Unsubscribing from channels')
-        echo.leave(`consultation.${consultationId}`)
-        echo.leave(`typing.consultation.${consultationId}`)
+        echoInstance.leave(`consultation.${consultationId}`)
+        echoInstance.leave(`typing.consultation.${consultationId}`)
       }
     }
   } catch (error) {
