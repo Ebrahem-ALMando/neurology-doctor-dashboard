@@ -11,6 +11,7 @@ function VerifyContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const phoneNumber = searchParams.get("phone") || ""
+  const userRole = searchParams.get("role") || ""
   const { isAuthenticated } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -47,6 +48,7 @@ function VerifyContent() {
       onVerify={handleVerify}
       onResendCode={handleResendCode}
       isLoading={isLoading}
+      userRole={userRole as "admin" | "doctor" | "receptionist" | "patient" || "admin"}
     />
   )
 }

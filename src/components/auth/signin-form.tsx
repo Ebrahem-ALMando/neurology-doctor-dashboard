@@ -12,9 +12,12 @@ import { Brain, Phone, Loader2 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useCustomToastWithIcons } from "@/hooks/use-custom-toast-with-icons"
 import { getDeviceToken, getDeviceType } from "@/utils/device-token"
+import { useUsers } from "@/hooks/useUsers"
+import { getUsers } from "@/api/services/users"
+
 
 interface SignInFormProps {
-  onSubmit: (phoneNumber: string) => void
+  onSubmit: (phoneNumber: string,userRole:string) => void
   isLoading: boolean
 }
 
@@ -59,12 +62,19 @@ export function SignInForm({ onSubmit }: SignInFormProps) {
 
     setIsLoading(true)
     const fullPhoneNumber = `${countryCode}${phoneNumber}`
-    console.log(getDeviceToken())
-    console.log(getDeviceType())
+
     try {
+      let userRole = "admin"
+      
+      const user =await getUsers({ phone: fullPhoneNumber })
+    
+      if(user.data[0]){
+        userRole = user.data[0]?.role as string
+      }
+
       const result = await login({
         phone: fullPhoneNumber,
-        role: "admin",
+        role: userRole as "admin" | "doctor" | "receptionist" | "patient" ,
         device_token: getDeviceToken(),
         device_type: getDeviceType()
       })
@@ -72,11 +82,12 @@ export function SignInForm({ onSubmit }: SignInFormProps) {
       if (result.success) {
         showLoginSuccess()
         // OTP sent successfully, navigate to verify page
-        onSubmit(fullPhoneNumber)
+        onSubmit(fullPhoneNumber,userRole)
       } else {
         showLoginError(result.message)
       }
     } catch (error) {
+      console.log(error)
       showNetworkError()
     } finally {
       setIsLoading(false)

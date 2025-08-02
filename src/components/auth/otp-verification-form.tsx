@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { getDeviceToken, getDeviceType } from "@/utils/device-token"
 // ... (rest of the imports)
 
-export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode }: OTPVerificationFormProps) {
+export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode, userRole }: OTPVerificationFormProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [countdown, setCountdown] = useState(60)
   const [canResend, setCanResend] = useState(false)
@@ -73,7 +73,7 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode }: OTP
     try {
       const result = await verifyOtp({
         phone: phoneNumber,
-        role: "admin",
+        role: userRole,
         otp: otpString,
         device_token: getDeviceToken(),
         device_type: getDeviceType()
@@ -122,7 +122,7 @@ export function OTPVerificationForm({ phoneNumber, onVerify, onResendCode }: OTP
   
       const result = await login({
         phone: phoneNumber,
-        role: "admin",
+        role: userRole,
         device_token: getDeviceToken(),
         device_type: getDeviceType()
       })

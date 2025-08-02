@@ -1,6 +1,7 @@
 import { fetchAPI } from "@/api/api";
 import ApiConfig from "@/api/apiConfig";
 import type { APIResponse } from "@/api/api";
+import { log } from "console";
 
 export interface User {
   id: number;
@@ -24,6 +25,7 @@ export interface GetUsersParams {
   page?: number;
   per_page?: number;
   is_active?: boolean;
+  phone?: string;
 }
 
 export interface GetUsersResponse {
@@ -38,12 +40,13 @@ export interface GetUsersResponse {
 
 export const getUsers = async (params: GetUsersParams = {}): Promise<APIResponse<GetUsersResponse>> => {
   const searchParams = new URLSearchParams();
-  
+  console.log(params)
   if (params.search) searchParams.append("search", params.search);
   if (params.role) searchParams.append("role", params.role);
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.per_page) searchParams.append("per_page", params.per_page.toString());
   if (params.is_active !== undefined) searchParams.append("is_active", params.is_active.toString());
+  if (params.phone) searchParams.append("phone", params.phone);
   
   const endPointKey = "users";
   const endpoint = `${endPointKey}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;

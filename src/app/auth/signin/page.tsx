@@ -17,11 +17,11 @@ export default function SignInPage() {
     return null
   }
 
-  const handleSignIn = async (phoneNumber: string) => {
+  const handleSignIn = async (phoneNumber: string,userRole:string) => {
     setIsLoading(true)
     
     // الانتقال إلى صفحة رمز التحقق مع تمرير رقم الهاتف
-    router.push(`/auth/verify?phone=${encodeURIComponent(phoneNumber)}`)
+    router.push(`/auth/verify?phone=${encodeURIComponent(phoneNumber)}&role=${userRole}`)
     
     setIsLoading(false)
   }
