@@ -1,7 +1,10 @@
 import useSWR from "swr"
 import { getArticles } from "@/api/services/articles/getArticles"
+import { getArticlesWithComments } from "@/api/services/articles/getArticlesWithComments"
+
 import { APIResponse } from "@/api/api"
 import {Article, getArticleStats} from "@/data/articles"
+import { ArticleWithComments } from "@/api/services/articles/types"
 
 interface UseArticlesParams {
   search?: string;
@@ -21,7 +24,20 @@ export const useArticles = (params: UseArticlesParams = {}) => {
         ["articles", params], 
         () => getArticles(params), 
         {
-            revalidateOnFocus: false,
+        revalidateOnFocus: false,
+        }
+    )
+
+    const {
+        data:articleWithComments,
+        error:errorArticleWithComments,
+        isLoading:isLoadingArticleWithComments,
+        mutate:mutateArticleWithComments,
+    } = useSWR<APIResponse<ArticleWithComments[]>>(
+        "articleWithComments", 
+        getArticlesWithComments, 
+        {
+        revalidateOnFocus: false,
         }
     )
 
@@ -36,5 +52,9 @@ export const useArticles = (params: UseArticlesParams = {}) => {
         isLoading,
         error: hasError,
         mutate,
+        articleWithComments:articleWithComments?.data||[],
+        errorArticleWithComments,
+        isLoadingArticleWithComments,
+        mutateArticleWithComments
     }
 }

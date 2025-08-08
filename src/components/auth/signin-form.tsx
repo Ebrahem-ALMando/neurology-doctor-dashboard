@@ -49,18 +49,22 @@ export function SignInForm({ onSubmit }: SignInFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
+
 
     if (!phoneNumber.trim()) {
       showLoginError("يرجى إدخال رقم الهاتف")
+      setIsLoading(false)
       return
     }
 
     if (!validatePhoneNumber(phoneNumber)) {
       showLoginError("رقم الهاتف غير صحيح")
+      setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
+ 
     const fullPhoneNumber = `${countryCode}${phoneNumber}`
 
     try {
@@ -86,6 +90,7 @@ export function SignInForm({ onSubmit }: SignInFormProps) {
       } else {
         showLoginError(result.message)
       }
+      setIsLoading(false)
     } catch (error) {
       console.log(error)
       showNetworkError()
@@ -161,9 +166,9 @@ export function SignInForm({ onSubmit }: SignInFormProps) {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoading}
+            disabled={isLoading || isLoadingInner}
           >
-            {isLoading ? (
+            {isLoading || isLoadingInner ? (
               <>
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                 جاري الإرسال...

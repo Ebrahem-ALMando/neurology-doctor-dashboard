@@ -277,7 +277,7 @@ export interface FetchOptions extends RequestInit {
 
 export const fetchAPI = async <T = any>(
     endpoint: string,
-    method: string = "GET",
+    method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" = "GET",
     data: any = null,
     options: RequestInit = {},
     config: APIConfig = { showError: true }

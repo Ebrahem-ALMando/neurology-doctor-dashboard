@@ -2,7 +2,17 @@ import useSWR from "swr";
 import { getUsers, getDoctors, type GetUsersParams, type GetDoctorsParams } from "@/api/services/users";
 import { APIResponse } from "@/api/api";
 import type { User } from "@/api/services/users";
-
+import { getUsersWithComments } from "@/api/services/users/getUsersWithComments";
+import { UsersWithComments } from "@/api/services/users/types";
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
+}
 export function useUsers(params: GetUsersParams = {}) {
   const { data, error: swrError, isLoading, mutate } = useSWR<APIResponse<{ data: User[]; meta: any }>>(
     ["users", params],
@@ -10,13 +20,29 @@ export function useUsers(params: GetUsersParams = {}) {
     { revalidateOnFocus: false }
   );
   
+  const {
+    data: usersWithComments,
+    error: errorUsersWithComments,
+    isLoading: isLoadingUsersWithComments,
+    mutate: mutateUsersWithComments
+  } = useSWR<APIResponse<PaginatedResponse<UsersWithComments>>>(
+    "usersWithComments",
+    getUsersWithComments,
+    { revalidateOnFocus: false }
+  );  
+
+
   const hasError = swrError || data?.error;
   return { 
     users: data?.data || [], 
     meta: data?.meta, 
     isLoading, 
     error: hasError, 
-    mutate 
+    mutate ,
+    usersWithComments,
+    errorUsersWithComments,
+    isLoadingUsersWithComments,
+    mutateUsersWithComments
   };
 }
 
