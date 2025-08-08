@@ -280,7 +280,6 @@ export function CommentsTableView({
             ))}
             </>
           }
-          
           </TableBody>
         </Table>
       </div>
@@ -305,3 +304,4 @@ export function CommentsTableView({
     </TooltipProvider>
   )
 }
+
